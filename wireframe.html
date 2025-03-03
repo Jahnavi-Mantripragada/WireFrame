@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimotion EV Fleet Dashboard</title>
+  <style>
+    :root {
+      --primary: #3498db;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --info: #1abc9c;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+      --text-dark: #34495e;
+      --text-light: #f5f5f5;
+      --bg-dark: #1a1a2e;
+      --bg-light: #f5f5f5;
+      --card-dark: #2d2d42;
+      --card-light: #ffffff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body.dark-mode {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo h1 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background-color: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .theme-toggle {
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 5px;
+      background-color: var(--light);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dark-mode .theme-toggle {
+      background-color: var(--dark);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 20px;
+      grid-template-areas:
+        "status status kpi kpi"
+        "swap map map alerts"
+        "swap map map alerts";
+    }
+
+    .card {
+      background-color: var(--card-light);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: 20px;
+      transition: box-shadow 0.3s;
+    }
+
+    .dark-mode .card {
+      background-color: var(--card-dark);
+    }
+
+    .card:hover {
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: none;
+      background-color: var(--light);
+      color: var(--text-dark);
+    }
+
+    .dark-mode .btn {
+      background-color: var(--dark);
+      color: var(--text-light);
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Vehicle Status Panel */
+    .status-panel {
+      grid-area: status;
+    }
+
+    .status-boxes {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .status-box {
+      flex: 1;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+      color: white;
+    }
+
+    .status-box.available {
+      background-color: var(--success);
+    }
+
+    .status-box.in-service {
+      background-color: var(--warning);
+    }
+
+    .status-box.battery-swap {
+      background-color: var(--info);
+    }
+
+    .status-box.critical {
+      background-color: var(--danger);
+    }
+
+    .status-count {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .status-label {
+      font-size: 14px;
+    }
+
+    /* Battery Swapping Progress */
+    .battery-swap {
+      grid-area: swap;
+    }
+
+    .swap-progress {
+      margin: 20px 0;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 20px;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    .swap-stations {
+      margin-top: 15px;
+    }
+
+    .station {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .station-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .station-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .station-indicator.active {
+      background-color: var(--success);
+    }
+
+    .station-indicator.warning {
+      background-color: var(--warning);
+    }
+
+    .station-indicator.error {
+      background-color: var(--danger);
+    }
+
+    /* Map Section */
+    .vehicle-map {
+      grid-area: map;
+      position: relative;
+    }
+
+    .map-container {
+      width: 100%;
+      height: 400px;
+      background-color: #e9ebed;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dark-mode .map-container {
+      background-color: #2a3a4a;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    .dark-mode .map-overlay {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+
+    .map-filters {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .filter-chip {
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .filter-chip.active {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .vehicle-marker {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .vehicle-marker.low-battery {
+      background-color: var(--warning);
+    }
+
+    .vehicle-marker.critical {
+      background-color: var(--danger);
+    }
+
+    /* KPI Metrics */
+    .kpi-metrics {
+      grid-area: kpi;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+
+    .kpi-card {
+      background-color: var(--light);
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .dark-mode .kpi-card {
+      background-color: var(--card-dark);
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .dark-mode .kpi-label {
+      color: #aaa;
+    }
+
+    .trend-indicator {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+
+    .trend-up {
+      color: var(--success);
+    }
+
+    .trend-down {
+      color: var(--danger);
+    }
+
+    /* Alerts Panel */
+    .alerts-panel {
+      grid-area: alerts;
+    }
+
+    .alerts-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .alert-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-critical {
+      background-color: rgba(231, 76, 60, 0.1);
+      border-left: 4px solid var(--danger);
+    }
+
+    .dark-mode .alert-critical {
+      background-color: rgba(231, 76, 60, 0.2);
+    }
+
+    .alert-warning {
+      background-color: rgba(243, 156, 18, 0.1);
+      border-left: 4px solid var(--warning);
+    }
+
+    .dark-mode .alert-warning {
+      background-color: rgba(243, 156, 18, 0.2);
+    }
+
+    .alert-icon {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .alert-critical .alert-icon {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .alert-warning .alert-icon {
+      background-color: var(--warning);
+      color: white;
+    }
+
+    .alert-content {
+      flex: 1;
+    }
+
+    .alert-title {
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+
+    .alert-message {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .dark-mode .alert-message {
+      color: #aaa;
+    }
+
+    .alert-time {
+      font-size: 11px;
+      color: #999;
+    }
+
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "status status"
+          "kpi kpi"
+          "swap alerts"
+          "map map";
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "status"
+          "kpi"
+          "swap"
+          "alerts"
+          "map";
+      }
+
+      .status-boxes {
+        flex-direction: column;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">O</div>
+        <h1>Optimotion EV Fleet Dashboard</h1>
+      </div>
+      <div class="header-controls">
+        <div class="theme-toggle" onclick="toggleTheme()">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-text">Dark Mode</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Vehicle Status Panel -->
+      <div class="card status-panel">
+        <div class="card-header">
+          <h2 class="card-title">Live Vehicle Service Status</h2>
+          <div class="card-actions">
+            <button class="btn" onclick="refreshStatus()">Refresh</button>
+          </div>
+        </div>
+        <div class="status-boxes">
+          <div class="status-box available">
+            <div class="status-count">42</div>
+            <div class="status-label">Available</div>
+          </div>
+          <div class="status-box in-service">
+            <div class="status-count">18</div>
+            <div class="status-label">In Service</div>
+          </div>
+          <div class="status-box battery-swap">
+            <div class="status-count">7</div>
+            <div class="status-label">Battery Swap</div>
+          </div>
+          <div class="status-box critical">
+            <div class="status-count">3</div>
+            <div class="status-label">Critical Fault</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Metrics -->
+      <div class="card kpi-metrics">
+        <div class="card-header">
+          <h2 class="card-title">Fleet KPI Metrics</h2>
+          <div class="card-actions">
+            <select class="btn">
+              <option>Today</option>
+              <option>This Week</option>
+              <option>This Month</option>
+            </select>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Active Fleet</div>
+            <div class="kpi-value">70<span class="trend-indicator trend-up">↑ 5%</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Est. Revenue</div>
+            <div class="kpi-value">$8.2K<span class="trend-indicator trend-up">↑ 12%</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Downtime Hours</div>
+            <div class="kpi-value">23.5<span class="trend-indicator trend-down">↓ 8%</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Sales Funnel</div>
+            <div class="kpi-value">15<span class="trend-indicator trend-up">↑ 2%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Battery Swapping Progress -->
+      <div class="card battery-swap">
+        <div class="card-header">
+          <h2 class="card-title">Battery Swapping</h2>
+          <div class="card-actions">
+            <button class="btn">View All</button>
+          </div>
+        </div>
+        <div class="swap-progress">
+          <div style="display: flex; justify-content: space-between;">
+            <span>Current swap: Vehicle EV-1037</span>
+            <span>67%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 67%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span>Started: 10:23 AM</span>
+            <span>Est. completion: 10:32 AM</span>
+          </div>
+        </div>
+        <div class="swap-stations">
+          <h3 style="font-size: 14px; margin-bottom: 10px;">Swap Stations</h3>
+          <div class="station">
+            <span>Station #1</span>
+            <div class="station-status">
+              <div class="station-indicator active"></div>
+              <span>Available</span>
+            </div>
+          </div>
+          <div class="station">
+            <span>Station #2</span>
+            <div class="station-status">
+              <div class="station-indicator active"></div>
+              <span>Available</span>
+            </div>
+          </div>
+          <div class="station">
+            <span>Station #3</span>
+            <div class="station-status">
+              <div class="station-indicator warning"></div>
+              <span>In Use (67%)</span>
+            </div>
+          </div>
+          <div class="station">
+            <span>Station #4</span>
+            <div class="station-status">
+              <div class="station-indicator error"></div>
+              <span>Failed Swap</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vehicle Map -->
+      <div class="card vehicle-map">
+        <div class="card-header">
+          <h2 class="card-title">Urgent Vehicle Locations</h2>
+          <div class="map-filters">
+            <div class="filter-chip active">Low Battery</div>
+            <div class="filter-chip active">Critical Faults</div>
+          </div>
+        </div>
+        <div class="map-container">
+          <!-- This would be a real map implementation, using a placeholder for design -->
+          <!-- Simulated vehicle markers -->
+          <div class="vehicle-marker low-battery" style="top: 120px; left: 180px;"></div>
+          <div class="vehicle-marker low-battery" style="top: 150px; left: 230px;"></div>
+          <div class="vehicle-marker critical" style="top: 210px; left: 150px;"></div>
+          <div class="vehicle-marker low-battery" style="top: 90px; left: 300px;"></div>
+          <div class="vehicle-marker critical" style="top: 180px; left: 350px;"></div>
+          
+          <img src="/api/placeholder/800/400" alt="Map Placeholder" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;" />
+          
+          <div class="map-overlay">
+            <div style="font-size: 12px; margin-bottom: 5px;">
+              <span style="display: flex; align-items: center; gap: 5px;">
+                <span style="width: 10px; height: 10px; background-color: var(--warning); display: inline-block; border-radius: 50%;"></span>
+                Low Battery (4)
+              </span>
+            </div>
+            <div style="font-size: 12px;">
+              <span style="display: flex; align-items: center; gap: 5px;">
+                <span style="width: 10px; height: 10px; background-color: var(--danger); display: inline-block; border-radius: 50%;"></span>
+                Critical Fault (2)
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts Panel -->
+      <div class="card alerts-panel">
+        <div class="card-header">
+          <h2 class="card-title">Urgent Alerts</h2>
+          <span style="font-size: 14px; background-color: var(--danger); color: white; padding: 2px 8px; border-radius: 10px;">6</span>
+        </div>
+        <div class="alerts-list">
+          <div class="alert-item alert-critical">
+            <div class="alert-icon">!</div>
+            <div class="alert-content">
+              <div class="alert-title">Battery Swap Failed</div>
+              <div class="alert-message">Vehicle EV-1028 at Station #4 requires manual intervention</div>
+              <div class="alert-time">10:17 AM</div>
+            </div>
+          </div>
+          <div class="alert-item alert-critical">
+            <div class="alert-icon">!</div>
+            <div class="alert-content">
+              <div class="alert-title">Critical Battery Level</div>
+              <div class="alert-message">Vehicle EV-1015 at 5% SOC - Needs immediate swap</div>
+              <div class="alert-time">10:14 AM</div>
+            </div>
+          </div>
+          <div class="alert-item alert-warning">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+              <div class="alert-title">Booking Shortage</div>
+              <div class="alert-message">Downtown area has 5 EVs with no bookings for next 3 hours</div>
+              <div class="alert-time">10:08 AM</div>
+            </div>
+          </div>
+          <div class="alert-item alert-warning">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+              <div class="alert-title">Multiple Low SOC Vehicles</div>
+              <div class="alert-message">3 vehicles below 20% battery in North District</div>
+              <div class="alert-time">9:52 AM</div>
+            </div>
+          </div>
+          <div class="alert-item alert-critical">
+            <div class="alert-icon">!</div>
+            <div class="alert-content">
+              <div class="alert-title">Charging Station Offline</div>
+              <div class="alert-message">Station #2 in East Sector reporting connectivity issues</div>
+              <div class="alert-time">9:47 AM</div>
+            </div>
+          </div>
+          <div class="alert-item alert-warning">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+              <div class="alert-title">Maintenance Due</div>
+              <div class="alert-message">4 vehicles overdue for scheduled maintenance</div>
+              <div class="alert-time">9:30 AM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      const themeText = document.getElementById('theme-text');
+      
+      body.classList.toggle('dark-mode');
+      
+      if (body.classList.contains('dark-mode')) {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Light Mode';
+      } else {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Dark Mode';
+      }
+    }
+    
+    function refreshStatus() {
+      // This would actually refresh data in a real implementation
+      console.log('Refreshing status...');
+      
+      // Simulate refresh with a small animation
+      const statusBoxes = document.querySelectorAll('.status-box');
+      statusBoxes.forEach(box => {
+        box.style.transition = 'transform 0.3s';
+        box.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          box.style.transform = 'scale(1)';
+        }, 300);
+      });
+    }
+  </script>
+</body>
+</html>
